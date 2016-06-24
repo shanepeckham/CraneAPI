@@ -11,5 +11,8 @@ namespace CraneAPI.Models
         [Required]
         [Display(Name = "file")]
         public string file { get; set; }
+        [Required]
+        [Display(Name = "faceListId")]
+        public string faceListId { get; set; }
     }
 }

@@ -20,6 +20,7 @@ namespace CraneAPI.Controllers
         {
             public string url { get; set; }
         }
+
         public class faceRectangle
         {
             public int top { get; set; }
@@ -33,9 +34,15 @@ namespace CraneAPI.Controllers
             public string persistedFaceId { get; set; }
         }
 
+        public class FindSimilarOutput
+        {
+            public string persistedFaceId { get; set; }
+            public double confidence { get; set; }
+        }
+
         public class detectBodyOutput
         {
-            public Guid faceId { get; set; }
+            public string faceId { get; set; }
             public faceRectangle faceRectangles { get; set; }
 
         }
@@ -53,46 +60,37 @@ namespace CraneAPI.Controllers
 
             detectBodyOutput detectOutput = new detectBodyOutput
             {
-                faceId = new Guid(),
+                faceId = "",
             };
-
-            //var faceServiceClient = new FaceServiceClient("77d48262ff254746b7c7a152c8fd38aa");
-            //var faces = await faceServiceClient.DetectAsync(url, false, false);
-
-            //foreach (var face in faces)
-            //{
-            //    detectOutput.faceId = face.FaceId;
-            //}
-
-
-
-
-            //    await RunDetectAsync(Url);
 
             using (var client = new HttpClient())
             {
-                // New code:
+                // Start Face ai
                 globals.SetClientHeaders(client);
 
-                // HTTP POST
+                // Detect a face
                 detectBodyInput db = new detectBodyInput() { url = url };
                 HttpResponseMessage response = await client.PostAsJsonAsync("face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=false", db);
                 if (response.IsSuccessStatusCode)
                 {
-                    string s = response.ToString();
                     detectBodyOutput dbo = new detectBodyOutput();
-
                     string data = await response.Content.ReadAsStringAsync();
-                    //  string data = await response.Content.ReadAsStringAsync();
-
-                    //     JavaScriptSerializer JSserializer = new JavaScriptSerializer();
-                    //deserialize to your class
-                    //  var detectedFace = JSserializer.Deserialize<detectBodyOutput[]>(data);
                     var dbo2 = JsonConvert.DeserializeObject<detectBodyOutput[]>(data);
                     detectOutput.faceId = dbo2[0].faceId;
-                    // detectBodyOutput dbo = await response.Content.ReadAsAsync<detectBodyOutput>();
-                    //    var dbo = await response.Content.ReadAsAsync<string>();
-                    //    List<faceRectangle> data = JsonConvert.DeserializeObject<List<faceRectangle>>(response.Content.ReadAsAsync<faceRectangle>().ToString());
+
+                    FindSimilarBindingModel findSimilarInput = new FindSimilarBindingModel
+                    {
+                        faceId = dbo2[0].faceId,
+                        faceListId = detectInput.faceListId,
+                        maxNumOfCandidatesReturned = 10
+                    };
+
+                    //Now we Find similar
+                    FindSimilarOutput findSimilarOuput = new FindSimilarOutput();
+                    findSimilarOuput = await globals.FindSimilarFace(client, findSimilarInput);
+
+                    //Now we get the details from CRM
+
                 }
 
             }

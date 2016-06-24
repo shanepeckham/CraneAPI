@@ -28,6 +28,33 @@ namespace CraneAPI.Globals
             return client;
         }
 
+        public static async Task<FaceController.FindSimilarOutput> FindSimilarFace(HttpClient client, FindSimilarBindingModel findSimilarInputBody)
+        {
+            FaceController.FindSimilarOutput findSimilarOutput = new FaceController.FindSimilarOutput
+            {
+                persistedFaceId = "",
+                confidence = 0.00
+            };
+
+            using (client = new HttpClient())
+            {
+                // New code:
+                globals.SetClientHeaders(client);
+
+                // HTTP POST
+                HttpResponseMessage response = await client.PostAsJsonAsync("face/v1.0/findsimilars", findSimilarInputBody);
+                if (response.IsSuccessStatusCode)
+                {
+                    string data = await response.Content.ReadAsStringAsync();
+                    var dbo2 = JsonConvert.DeserializeObject<FaceController.FindSimilarOutput[]>(data);
+                    findSimilarOutput.persistedFaceId = dbo2[0].persistedFaceId;
+                    findSimilarOutput.confidence = dbo2[0].confidence;
+                }
+            }
+
+            return findSimilarOutput;
+        }
+
         public static async Task<FaceController.AddFaceOutput> AddFaceToFaceList(HttpClient client, AddFaceBindingModel addFaceInputBody)
         {
 

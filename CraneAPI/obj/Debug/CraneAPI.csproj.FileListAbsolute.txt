@@ -44,4 +44,3 @@ C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\Sy
 C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\Microsoft.Xrm.Sdk.Deployment.xml
 C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\obj\Debug\CraneAPI.dll
 C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\obj\Debug\CraneAPI.pdb
-C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\obj\Debug\CraneAPI.csprojResolveAssemblyReference.cache

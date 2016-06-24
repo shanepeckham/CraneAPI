@@ -12,6 +12,10 @@ namespace CraneAPI.Models
         [Display(Name = "url")]
         public string url { get; set; }
 
+        [Required]
+        [Display(Name = "faceListId")]
+        public string faceListId { get; set; }
+
     }
 
     public class AddFaceBindingModel
@@ -24,6 +28,20 @@ namespace CraneAPI.Models
         public string faceListId { get; set; }
         [Display(Name = "userData")]
         public string userData { get; set; }
+
+
+    }
+
+    public class FindSimilarBindingModel
+    {
+        [Required]
+        [Display(Name = "faceId")]
+        public string faceId { get; set; }
+        [Required]
+        [Display(Name = "faceListId")]
+        public string faceListId { get; set; }
+        [Display(Name = "maxNumOfCandidatesReturned")]
+        public int maxNumOfCandidatesReturned { get; set; }
 
 
     }

@@ -10,6 +10,10 @@ using CraneAPI.Globals;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Crm.Sdk.Messages;
+using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
+using Microsoft.Xrm.Tooling.Connector;
 
 namespace CraneAPI.Controllers
 {
@@ -35,31 +39,38 @@ namespace CraneAPI.Controllers
 
             string file = bulkInput.file;
 
-      //      string text = System.IO.File.ReadAllText(@file);
-
-            //var faceServiceClient = new FaceServiceClient("77d48262ff254746b7c7a152c8fd38aa");
-            //var faces = await faceServiceClient.DetectAsync(file, false, false);
-
-            // Display the file contents to the console. Variable text is a string.
-          //  System.Console.WriteLine("Contents of WriteText.txt = {0}", text);
-
-            // Example #2
-            // Read each line of the file into a string array. Each element
-            // of the array is one line of the file.
             string[] lines = System.IO.File.ReadAllLines(@file);
 
             // Display the file contents by using a foreach loop.
-            System.Console.WriteLine("Contents of WriteLines2.txt = ");
             foreach (string line in lines)
             {
-                // Use a tab to indent each line of the file.
-                Console.WriteLine("\t" + line);
+                string name = line.Split(',')[0];
+                string imageUrl = line.Split(',')[1];
+
+                AddFaceBindingModel AddFaceInput = new AddFaceBindingModel
+                {
+                    faceListId = bulkInput.faceListId,
+                    url = imageUrl,
+                    userData = name
+                };
+
+                // Now we create the Face in the FaceList 
+                FaceController.AddFaceOutput addFaceOutput = new FaceController.AddFaceOutput();
+                using (var client = new HttpClient())
+                {
+                    globals.SetClientHeaders(client);
+                    addFaceOutput = await globals.AddFaceToFaceList(client, AddFaceInput);
+                    //Now we create Contact in CRM
+                    globals.ConnectToCRM();  
+                    Account account = new Account { Name = "Fourth Coffee" };
+                    account.AccountCategoryCode = new OptionSetValue((int)AccountAccountCategoryCode.PreferredCustomer);
+                    account.CustomerTypeCode = new OptionSetValue((int)AccountCustomerTypeCode.Investor);
+
+                    // Create an account record named Fourth Coffee.
+                    _accountId = _orgService.Create(account);
+                }
+
             }
-
-            // Keep the console window open in debug mode.
-            Console.WriteLine("Press any key to exit.");
-            System.Console.ReadKey();
-
             return Ok(bulkOutput);
         }
     }
