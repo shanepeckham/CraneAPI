@@ -12,6 +12,10 @@ using Microsoft.Xrm.Tooling.Connector;
 using CraneAPI.Controllers;
 using Newtonsoft.Json;
 using CraneAPI.Models;
+using CraneAPI.CRM;
+using System.IO;
+using System.Net;
+using System.Web;
 
 namespace CraneAPI.Globals
 {
@@ -19,6 +23,15 @@ namespace CraneAPI.Globals
     public class globals
     {
         public static IOrganizationService _orgService;
+        public class createCRMContactInput
+        {
+            public string url { get; set; }
+            public string persistedFaceId { get; set; }
+            public string faceListId { get; set; }
+            public string name { get; set; }
+
+        }
+
         public static HttpClient SetClientHeaders(HttpClient client)
         {
             client.BaseAddress = new Uri("https://api.projectoxford.ai/");
@@ -58,10 +71,10 @@ namespace CraneAPI.Globals
         public static async Task<FaceController.AddFaceOutput> AddFaceToFaceList(HttpClient client, AddFaceBindingModel addFaceInputBody)
         {
 
-            FaceController.AddFaceOutput addFaceOutput = new FaceController.AddFaceOutput
-            {
-                persistedFaceId = "",
-            };
+            FaceController.AddFaceOutput addFaceOutput = new FaceController.AddFaceOutput();
+            //{
+            //    persistedFaceId = "",
+            //};
 
             using (client = new HttpClient())
             {
@@ -73,8 +86,8 @@ namespace CraneAPI.Globals
                 if (response.IsSuccessStatusCode)
                 {
                     string data = await response.Content.ReadAsStringAsync();
-                    var dbo2 = JsonConvert.DeserializeObject<FaceController.AddFaceOutput[]>(data);
-                    addFaceOutput.persistedFaceId = dbo2[0].persistedFaceId;
+                    var dbo2 = JsonConvert.DeserializeObject<FaceController.AddFaceOutput>(data);
+                    addFaceOutput.persistedFaceId = dbo2.persistedFaceId;
                 }
             }
 
@@ -90,6 +103,49 @@ namespace CraneAPI.Globals
 
             // Cast the proxy client to the IOrganizationService interface.
             _orgService = (IOrganizationService)conn.OrganizationWebProxyClient != null ? (IOrganizationService)conn.OrganizationWebProxyClient : (IOrganizationService)conn.OrganizationServiceProxy;
+        }
+
+        public static async Task<HttpResponseMessage> GetBingDetails(string search)
+        {
+            var client = new HttpClient();
+            var queryString = HttpUtility.ParseQueryString(string.Empty);
+
+            // Request headers
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "652fbb69c13248628deac2340632ac77");
+
+            // Request parameters
+            queryString["q"] = search;
+            queryString["count"] = "1";
+            queryString["offset"] = "0";
+            queryString["mkt"] = "en-us";
+            queryString["safesearch"] = "Moderate";
+            var uri = "https://api.cognitive.microsoft.com/bing/v5.0/search?" + queryString;
+
+            var response = await client.GetAsync(uri);
+
+            return response;
+        }
+
+        public static Guid CreateCRMContact(createCRMContactInput CRMInput)
+        {
+            Guid contactId = new Guid();
+            Contact contact = new Contact();
+            contact.crmazure_faceId = CRMInput.persistedFaceId;
+            contact.FirstName = CRMInput.name.Split(' ')[0];
+            contact.LastName = CRMInput.name.Split(' ')[1];
+
+            //Get the image
+           
+            using (WebClient webClient = new WebClient())
+            {
+                byte[] imageBytes = webClient.DownloadData(CRMInput.url);
+
+                contact.EntityImage = imageBytes;
+            }
+
+            contactId = _orgService.Create(contact);
+
+            return contactId;
         }
 
         private static String GetServiceConfiguration()

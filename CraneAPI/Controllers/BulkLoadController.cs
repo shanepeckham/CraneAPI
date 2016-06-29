@@ -14,10 +14,12 @@ using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Tooling.Connector;
+using CraneAPI.CRM;
+
 
 namespace CraneAPI.Controllers
 {
-    public class BulkLoadController : ApiController
+     public class BulkLoadController : ApiController
     {
         public class bulkBodyOutput
         {
@@ -39,13 +41,14 @@ namespace CraneAPI.Controllers
 
             string file = bulkInput.file;
 
-            string[] lines = System.IO.File.ReadAllLines(@file);
-
+            string[] lines = File.ReadAllLines(@file);
+            int iCount = 0;
             // Display the file contents by using a foreach loop.
             foreach (string line in lines)
             {
                 string name = line.Split(',')[0];
                 string imageUrl = line.Split(',')[1];
+                Guid contactId = new Guid();
 
                 AddFaceBindingModel AddFaceInput = new AddFaceBindingModel
                 {
@@ -61,15 +64,25 @@ namespace CraneAPI.Controllers
                     globals.SetClientHeaders(client);
                     addFaceOutput = await globals.AddFaceToFaceList(client, AddFaceInput);
                     //Now we create Contact in CRM
-                    globals.ConnectToCRM();  
-                    Account account = new Account { Name = "Fourth Coffee" };
-                    account.AccountCategoryCode = new OptionSetValue((int)AccountAccountCategoryCode.PreferredCustomer);
-                    account.CustomerTypeCode = new OptionSetValue((int)AccountCustomerTypeCode.Investor);
+                    globals.createCRMContactInput crmInput = new globals.createCRMContactInput();
+                    crmInput.name = name;
+                    crmInput.faceListId = bulkInput.faceListId;
+                    crmInput.persistedFaceId = addFaceOutput.persistedFaceId;
+                    crmInput.url = imageUrl;
 
-                    // Create an account record named Fourth Coffee.
-                    _accountId = _orgService.Create(account);
+                    if (iCount == 0)
+                    {
+                        globals.ConnectToCRM();
+                        HttpResponseMessage response = new HttpResponseMessage();
+                        response = await globals.GetBingDetails(name.ToString());
+
+                        //JsonTextReader json = new JsonTextReader();
+                        //json.
+                        contactId = globals.CreateCRMContact(crmInput);
+                    }
                 }
 
+                iCount++;
             }
             return Ok(bulkOutput);
         }
