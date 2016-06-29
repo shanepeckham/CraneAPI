@@ -43,12 +43,14 @@ namespace CraneAPI.Controllers
 
             string[] lines = File.ReadAllLines(@file);
             int iCount = 0;
+            Guid contactId = new Guid();
             // Display the file contents by using a foreach loop.
             foreach (string line in lines)
             {
                 string name = line.Split(',')[0];
                 string imageUrl = line.Split(',')[1];
-                Guid contactId = new Guid();
+                
+                Guid contactFaceId = new Guid();
 
                 AddFaceBindingModel AddFaceInput = new AddFaceBindingModel
                 {
@@ -75,10 +77,21 @@ namespace CraneAPI.Controllers
                         globals.ConnectToCRM();
                         HttpResponseMessage response = new HttpResponseMessage();
                         response = await globals.GetBingDetails(name.ToString());
+                     
+                        string jsonString = await response.Content.ReadAsStringAsync();
+                      
+                        var dbo2 = JsonConvert.DeserializeObject<globals.RootObject>(jsonString);
 
-                        //JsonTextReader json = new JsonTextReader();
-                        //json.
+                        crmInput.snippet = dbo2.webPages.value[0].snippet;
+
                         contactId = globals.CreateCRMContact(crmInput);
+
+                    }
+
+                    //Create the associated face
+                    if (addFaceOutput.persistedFaceId != null)
+                    {
+                        contactFaceId = globals.AddFaceToCRMContact(contactId, addFaceOutput.persistedFaceId);
                     }
                 }
 

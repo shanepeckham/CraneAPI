@@ -90,6 +90,8 @@ namespace CraneAPI.Controllers
                     findSimilarOuput = await globals.FindSimilarFace(client, findSimilarInput);
 
                     //Now we get the details from CRM
+                    globals.ConnectToCRM();
+                    globals.QueryCRMFaceOutput crmFaceOutput =  globals.QueryCRMForFace(findSimilarOuput.persistedFaceId, findSimilarOuput.confidence);
 
                 }
 

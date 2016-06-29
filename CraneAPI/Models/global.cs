@@ -16,6 +16,7 @@ using CraneAPI.CRM;
 using System.IO;
 using System.Net;
 using System.Web;
+using Microsoft.Xrm.Sdk.Query;
 
 namespace CraneAPI.Globals
 {
@@ -23,15 +24,91 @@ namespace CraneAPI.Globals
     public class globals
     {
         public static IOrganizationService _orgService;
+
+        public class QueryCRMFaceOutput
+        {
+            public List<CRMFaceItems> CRMFaceItems { get; set; }
+
+        }
+        public class CRMFaceItems
+        {
+            public string name { get; set; }
+            public string description { get; set; }
+            public double confidence { get; set; }
+        }
         public class createCRMContactInput
         {
             public string url { get; set; }
             public string persistedFaceId { get; set; }
             public string faceListId { get; set; }
             public string name { get; set; }
+            public string snippet { get; set; }
 
         }
 
+
+        public class QueryContext
+        {
+            public string originalQuery { get; set; }
+            public string alteredQuery { get; set; }
+            public string alterationOverrideQuery { get; set; }
+            public bool adultIntent { get; set; }
+        }
+
+        public class About
+        {
+            public string name { get; set; }
+        }
+
+        public class Value
+        {
+            public string id { get; set; }
+            public string name { get; set; }
+            public string url { get; set; }
+            public List<About> about { get; set; }
+            public string displayUrl { get; set; }
+            public string snippet { get; set; }
+            public string dateLastCrawled { get; set; }
+        }
+
+        public class WebPages
+        {
+            public string webSearchUrl { get; set; }
+            public int totalEstimatedMatches { get; set; }
+            public List<Value> value { get; set; }
+        }
+
+        public class Value2
+        {
+            public string id { get; set; }
+        }
+
+        public class Item
+        {
+            public string answerType { get; set; }
+            public int resultIndex { get; set; }
+            public Value2 value { get; set; }
+        }
+
+        public class Mainline
+        {
+            public List<Item> items { get; set; }
+        }
+
+        public class RankingResponse
+        {
+            public Mainline mainline { get; set; }
+        }
+
+        public class RootObject
+        {
+            public string _type { get; set; }
+            public QueryContext queryContext { get; set; }
+            public WebPages webPages { get; set; }
+            public RankingResponse rankingResponse { get; set; }
+        }
+
+        // bing
         public static HttpClient SetClientHeaders(HttpClient client)
         {
             client.BaseAddress = new Uri("https://api.projectoxford.ai/");
@@ -120,22 +197,118 @@ namespace CraneAPI.Globals
             queryString["mkt"] = "en-us";
             queryString["safesearch"] = "Moderate";
             var uri = "https://api.cognitive.microsoft.com/bing/v5.0/search?" + queryString;
-
+          
             var response = await client.GetAsync(uri);
 
             return response;
+        }
+        public static QueryCRMFaceOutput QueryCRMForFace(string persistedFaceId, double confidence)
+        {
+            QueryCRMFaceOutput CRMFaceOutput = new QueryCRMFaceOutput();
+            CRMFaceItems crmFaceItems = new CRMFaceItems();
+            
+            Entity face = new Entity("crmazure_faces");
+            Entity contact = new Entity("contact");
+
+            //Create a query expression specifying the link entity alias and the columns of the link entity that you want to return
+            QueryExpression qe = new QueryExpression();
+            qe.EntityName = "crmazure_faces";
+            qe.ColumnSet = new ColumnSet();
+            qe.ColumnSet.AddColumns("crmazure_name", "crmazure_faceid");
+
+            //qe.LinkEntities[0].Columns.AddColumns("name", "crmazure_faceid");
+            //qe.LinkEntities[0].EntityAlias = "primarycontact";
+            qe.Criteria = new FilterExpression();
+            qe.Criteria.AddCondition("crmazure_name", ConditionOperator.Equal, persistedFaceId);
+
+            EntityCollection ec = _orgService.RetrieveMultiple(qe);
+            int icount = 0;
+
+            foreach (var a in ec.Entities)
+            {
+                EntityReference ContactFace = a.GetAttributeValue<EntityReference>("crmazure_faceid");
+                Guid contactId = ContactFace.Id;
+                QueryExpression qc = new QueryExpression();
+                qc.EntityName = "contact";
+                qc.ColumnSet = new ColumnSet();
+                qc.ColumnSet.AddColumns("firstname", "lastname", "description");
+
+                qc.Criteria = new FilterExpression();
+                qc.Criteria.AddCondition("contactid", ConditionOperator.Equal, contactId.ToString());
+
+                EntityCollection econ = _orgService.RetrieveMultiple(qc);
+                foreach (var con in econ.Entities)
+                {
+                    crmFaceItems.name = con.GetAttributeValue<string>("firstname") + " " + con.GetAttributeValue<string>("lastname");
+                    crmFaceItems.description = con.GetAttributeValue<string>("description");
+                  //  crmFaceItems.confidence = 
+                    icount++;
+                }
+            }
+
+            return CRMFaceOutput;
+        }
+
+        public static Guid AddFaceToCRMContact(Guid contactId, string persistedFaceId)
+        {
+            Guid contactFaceId = new Guid();
+
+            crmazure_faces crmFace = new crmazure_faces();
+            crmFace.crmazure_name = persistedFaceId;
+            contactFaceId = _orgService.Create(crmFace);
+
+            EntityReferenceCollection relatedFace = new EntityReferenceCollection();
+            relatedFace.Add(new EntityReference(crmazure_faces.EntityLogicalName, contactFaceId));
+
+            Relationship faceRelationship = new Relationship("crmazure_contact_crmazure_faces");
+            _orgService.Associate(Contact.EntityLogicalName, contactId, faceRelationship, relatedFace);
+            //crmazure_faces contactFace = new crmazure_faces();
+            //EntityReference contact = new EntityReference();
+            //contact.Id = contactId;
+            //contact.LogicalName = "Contact";
+
+            //contact.Id = contactId;
+            //contactFace.crmazure_FaceId = contact;
+            //contactFace.crmazure_ContactFaceId = persistedFaceId;
+            //contactFace.crmazure_name = persistedFaceId;
+            //contactFaceId = _orgService.Create(contactFace);
+
+            //Relationship faceRelationship = new Relationship("crmazure_contact_crmazure_faces");
+            //EntityCollection relatedFacesToCreate = new EntityCollection
+            //{
+            //    EntityName = crmazure_faces.EntityLogicalName,
+            //    Entities =
+            //            {
+            //                new crmazure_faces{crmazure_ContactFaceId = persistedFaceId, crmazure_facesId = contactId}
+            //            }
+            //};
+
+            //accountToCreate.RelatedEntities.Add(letterRelationship, relatedLettersToCreate);
+
+
+            return contactFaceId;
         }
 
         public static Guid CreateCRMContact(createCRMContactInput CRMInput)
         {
             Guid contactId = new Guid();
             Contact contact = new Contact();
-            contact.crmazure_faceId = CRMInput.persistedFaceId;
+        //    contact.crmazure_faceId = CRMInput.persistedFaceId;
             contact.FirstName = CRMInput.name.Split(' ')[0];
             contact.LastName = CRMInput.name.Split(' ')[1];
+            if (CRMInput.snippet.Length > 1999)
+                {
+                    contact.Description = CRMInput.snippet.Substring(0, 1999);
+                }
+            else
+                {
+                contact.Description = CRMInput.snippet;
+            }
+
+            
 
             //Get the image
-           
+
             using (WebClient webClient = new WebClient())
             {
                 byte[] imageBytes = webClient.DownloadData(CRMInput.url);
