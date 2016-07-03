@@ -15,6 +15,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Tooling.Connector;
 using CraneAPI.CRM;
+using StackExchange.Redis;
 
 
 namespace CraneAPI.Controllers
@@ -26,6 +27,24 @@ namespace CraneAPI.Controllers
             public string value { get; set; }
 
         }
+
+
+
+        // POST buildCache
+        [Route("BuildCache")]
+        [SwaggerOperation("BuildCache")]
+        [SwaggerResponse(HttpStatusCode.OK)]
+        [SwaggerResponse(HttpStatusCode.NotFound)]
+        public async Task<IHttpActionResult> BuildCache()
+        {
+
+            globals.connection = globals.Connection;
+            globals.ConnectToCRM();
+            int cachednum = globals.buildCRMFaceCache();
+
+            return Ok(cachednum.ToString() + " Faces cached");
+        }
+
 
         // POST api/face/detect
         [Route("BulkLoad")]

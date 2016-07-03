@@ -55,7 +55,7 @@ namespace CraneAPI.Controllers
         [SwaggerResponse(HttpStatusCode.NotFound)]
         public async Task<IHttpActionResult> detectInputBody(DetectBindingModel detectInput)
         {
-
+            globals.CRMFaceItems crmFaceOutput = new globals.CRMFaceItems();
             string url = detectInput.url;
 
             detectBodyOutput detectOutput = new detectBodyOutput
@@ -91,14 +91,67 @@ namespace CraneAPI.Controllers
 
                     //Now we get the details from CRM
                     globals.ConnectToCRM();
-                    globals.QueryCRMFaceOutput crmFaceOutput =  globals.QueryCRMForFace(findSimilarOuput.persistedFaceId, findSimilarOuput.confidence);
+                    crmFaceOutput =  globals.QueryCRMForFace(findSimilarOuput.persistedFaceId, findSimilarOuput.confidence);
 
                 }
 
             }
 
             //ConnectToCRM();
-            return Ok(detectOutput);
+            return Ok(crmFaceOutput);
+        }
+
+        [Route("DetectFromCache")]
+        [SwaggerOperation("DetectFromCache")]
+        [SwaggerResponse(HttpStatusCode.OK)]
+        [SwaggerResponse(HttpStatusCode.NotFound)]
+        public async Task<IHttpActionResult> detectInputCache(DetectBindingModel detectInput)
+        {
+            globals.CRMFaceItems crmFaceOutput = new globals.CRMFaceItems();
+            string url = detectInput.url;
+
+            detectBodyOutput detectOutput = new detectBodyOutput
+            {
+                faceId = "",
+            };
+
+            using (var client = new HttpClient())
+            {
+                // Start Face ai
+                globals.SetClientHeaders(client);
+
+                // Detect a face
+                detectBodyInput db = new detectBodyInput() { url = url };
+                HttpResponseMessage response = await client.PostAsJsonAsync("face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=false", db);
+                if (response.IsSuccessStatusCode)
+                {
+                    detectBodyOutput dbo = new detectBodyOutput();
+                    string data = await response.Content.ReadAsStringAsync();
+                    var dbo2 = JsonConvert.DeserializeObject<detectBodyOutput[]>(data);
+                    detectOutput.faceId = dbo2[0].faceId;
+
+                    FindSimilarBindingModel findSimilarInput = new FindSimilarBindingModel
+                    {
+                        faceId = dbo2[0].faceId,
+                        faceListId = detectInput.faceListId,
+                        maxNumOfCandidatesReturned = 10
+                    };
+
+                    //Now we Find similar
+                    FindSimilarOutput findSimilarOuput = new FindSimilarOutput();
+                    findSimilarOuput = await globals.FindSimilarFace(client, findSimilarInput);
+
+                    //Now we get the details from Redis
+
+                    globals.connection = globals.Connection;
+                    crmFaceOutput = globals.QueryCRMForFaceCache(findSimilarOuput.persistedFaceId, findSimilarOuput.confidence);
+
+                }
+
+            }
+
+            //ConnectToCRM();
+            return Ok(crmFaceOutput);
         }
 
         // POST api/face/detect

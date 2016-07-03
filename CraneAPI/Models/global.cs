@@ -17,6 +17,7 @@ using System.IO;
 using System.Net;
 using System.Web;
 using Microsoft.Xrm.Sdk.Query;
+using StackExchange.Redis;
 
 namespace CraneAPI.Globals
 {
@@ -24,17 +25,24 @@ namespace CraneAPI.Globals
     public class globals
     {
         public static IOrganizationService _orgService;
+        public static ConnectionMultiplexer connection;
 
         public class QueryCRMFaceOutput
         {
             public List<CRMFaceItems> CRMFaceItems { get; set; }
 
         }
+        public class cacheFaceToContact
+        {
+            public string persistedFaceId { get; set; }
+            public string contactId { get; set; }
+        }
         public class CRMFaceItems
         {
             public string name { get; set; }
             public string description { get; set; }
             public double confidence { get; set; }
+            public string url { get; set; }
         }
         public class createCRMContactInput
         {
@@ -170,6 +178,20 @@ namespace CraneAPI.Globals
 
             return addFaceOutput;
         }
+        public static ConnectionMultiplexer Connection
+        {
+            get
+            {
+                return lazyConnection.Value;
+            }
+        }
+
+        private static Lazy<ConnectionMultiplexer> lazyConnection = new Lazy<ConnectionMultiplexer>(() =>
+        {
+            return ConnectionMultiplexer.Connect("cranecache.redis.cache.windows.net:6380,password=Dd99O7WPaA1HHCY9uIAfNbmPo6fpGQI8xQn5k50Gmr0=,ssl=True,abortConnect=True");
+        });
+
+  
 
         public static void ConnectToCRM()
         {
@@ -202,11 +224,68 @@ namespace CraneAPI.Globals
 
             return response;
         }
-        public static QueryCRMFaceOutput QueryCRMForFace(string persistedFaceId, double confidence)
+
+        public static int buildCRMFaceCache()
+        {
+            globals.connection = globals.Connection;
+            Entity face = new Entity("crmazure_faces");
+            //Create a query expression specifying the link entity alias and the columns of the link entity that you want to return
+            QueryExpression qe = new QueryExpression();
+            qe.EntityName = "crmazure_faces";
+            qe.ColumnSet = new ColumnSet();
+            qe.ColumnSet.AddColumns("crmazure_name", "crmazure_faceid");
+
+            //qe.LinkEntities[0].Columns.AddColumns("name", "crmazure_faceid");
+            //qe.LinkEntities[0].EntityAlias = "primarycontact";
+            qe.Criteria = new FilterExpression();
+            qe.Criteria.AddCondition("crmazure_name", ConditionOperator.NotNull);
+            qe.Criteria.AddCondition("crmazure_faceid", ConditionOperator.NotNull);
+
+            EntityCollection ec = _orgService.RetrieveMultiple(qe);
+            int icount = 0;
+            IDatabase cache = Connection.GetDatabase();
+            CRMFaceItems crmFaceItems = new CRMFaceItems();
+
+            foreach (var a in ec.Entities)
+            {
+                // If key exists, it is overwritten.
+               
+                EntityReference ContactFace = a.GetAttributeValue<EntityReference>("crmazure_faceid");
+                string contactId = ContactFace.Id.ToString();
+                cache.StringSet(a.GetAttributeValue<string>("crmazure_name"), contactId);
+
+                QueryExpression qc = new QueryExpression();
+                qc.EntityName = "contact";
+                qc.ColumnSet = new ColumnSet();
+                qc.ColumnSet.AddColumns("firstname", "lastname", "description", "websiteurl");
+
+                qc.Criteria = new FilterExpression();
+                qc.Criteria.AddCondition("contactid", ConditionOperator.Equal, contactId);
+
+                EntityCollection econ = _orgService.RetrieveMultiple(qc);
+                foreach (var con in econ.Entities)
+                {
+
+                    crmFaceItems.name = con.GetAttributeValue<string>("firstname") + " " + con.GetAttributeValue<string>("lastname");
+                    crmFaceItems.description = con.GetAttributeValue<string>("description");
+                    crmFaceItems.url = con.GetAttributeValue<string>("websiteurl");
+
+                    cache.StringSet(contactId, JsonConvert.SerializeObject(crmFaceItems));
+
+                }
+
+
+                icount++;
+            }
+
+            return icount;
+        }
+
+        public static CRMFaceItems QueryCRMForFace(string persistedFaceId, double confidence)
         {
             QueryCRMFaceOutput CRMFaceOutput = new QueryCRMFaceOutput();
             CRMFaceItems crmFaceItems = new CRMFaceItems();
-            
+  
             Entity face = new Entity("crmazure_faces");
             Entity contact = new Entity("contact");
 
@@ -231,7 +310,7 @@ namespace CraneAPI.Globals
                 QueryExpression qc = new QueryExpression();
                 qc.EntityName = "contact";
                 qc.ColumnSet = new ColumnSet();
-                qc.ColumnSet.AddColumns("firstname", "lastname", "description");
+                qc.ColumnSet.AddColumns("firstname", "lastname", "description", "websiteurl");
 
                 qc.Criteria = new FilterExpression();
                 qc.Criteria.AddCondition("contactid", ConditionOperator.Equal, contactId.ToString());
@@ -239,14 +318,32 @@ namespace CraneAPI.Globals
                 EntityCollection econ = _orgService.RetrieveMultiple(qc);
                 foreach (var con in econ.Entities)
                 {
+                  
                     crmFaceItems.name = con.GetAttributeValue<string>("firstname") + " " + con.GetAttributeValue<string>("lastname");
                     crmFaceItems.description = con.GetAttributeValue<string>("description");
-                  //  crmFaceItems.confidence = 
+                    crmFaceItems.url = con.GetAttributeValue<string>("websiteurl");
+                    crmFaceItems.confidence = confidence;
                     icount++;
                 }
             }
 
-            return CRMFaceOutput;
+          //  CRMFaceOutput.CRMFaceItems = crmFaceItems;
+
+            return crmFaceItems;
+        }
+
+        public static CRMFaceItems QueryCRMForFaceCache(string persistedFaceId, double confidence)
+        {
+            QueryCRMFaceOutput CRMFaceOutput = new QueryCRMFaceOutput();
+            IDatabase cache = Connection.GetDatabase();
+
+            Entity face = new Entity("crmazure_faces");
+            Entity contact = new Entity("contact");
+            string contactId = cache.StringGet(persistedFaceId);
+
+            CRMFaceItems crmFaceItems = JsonConvert.DeserializeObject<CRMFaceItems>(cache.StringGet(contactId));
+
+            return crmFaceItems;
         }
 
         public static Guid AddFaceToCRMContact(Guid contactId, string persistedFaceId)
@@ -316,6 +413,7 @@ namespace CraneAPI.Globals
                 contact.EntityImage = imageBytes;
             }
 
+            contact.WebSiteUrl = CRMInput.url;
             contactId = _orgService.Create(contact);
 
             return contactId;
