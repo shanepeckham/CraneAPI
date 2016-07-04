@@ -1,2 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<parameters />
+<parameters>
+  <parameter name="Server=CRM Online, organization=CRMAzure, user=markrobertson@marober.onmicrosoft.com-Web.config Connection String" description="Server=CRM Online, organization=CRMAzure, user=markrobertson@marober.onmicrosoft.com Connection String used in web.config by the application to access the database." defaultValue="Url=https://crmazure.crm.dynamics.com/; Username=markrobertson@marober.onmicrosoft.com; Password=pass@word1; authtype=Office365" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="C:\\Users\\shanepec\\Documents\\Visual\ Studio\ 2015\\Projects\\CraneAPI\\CraneAPI\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='Server=CRM Online, organization=CRMAzure, user=markrobertson@marober.onmicrosoft.com']/@connectionString" />
+  </parameter>
+</parameters>

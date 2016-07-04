@@ -331,7 +331,10 @@ namespace CraneAPI.Globals
 
             return crmFaceItems;
         }
-
+        public static void foo_OnClick()
+        {
+            var sem = "sem";
+        }
         public static CRMFaceItems QueryCRMForFaceCache(string persistedFaceId, double confidence)
         {
             QueryCRMFaceOutput CRMFaceOutput = new QueryCRMFaceOutput();

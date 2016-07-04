@@ -108,6 +108,7 @@ namespace CraneAPI.Controllers
         public async Task<IHttpActionResult> detectInputCache(DetectBindingModel detectInput)
         {
             globals.CRMFaceItems crmFaceOutput = new globals.CRMFaceItems();
+            
             string url = detectInput.url;
 
             detectBodyOutput detectOutput = new detectBodyOutput

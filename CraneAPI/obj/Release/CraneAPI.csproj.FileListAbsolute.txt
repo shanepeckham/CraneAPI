@@ -39,3 +39,12 @@ c:\users\shanepec\documents\visual studio 2015\Projects\CraneAPI\CraneAPI\bin\Sy
 c:\users\shanepec\documents\visual studio 2015\Projects\CraneAPI\CraneAPI\obj\Release\CraneAPI.csprojResolveAssemblyReference.cache
 c:\users\shanepec\documents\visual studio 2015\Projects\CraneAPI\CraneAPI\obj\Release\CraneAPI.dll
 c:\users\shanepec\documents\visual studio 2015\Projects\CraneAPI\CraneAPI\obj\Release\CraneAPI.pdb
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\Microsoft.Xrm.Tooling.Connector.dll
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\StackExchange.Redis.StrongName.dll
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\Microsoft.IdentityModel.Clients.ActiveDirectory.dll
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\Microsoft.IdentityModel.Clients.ActiveDirectory.WindowsForms.dll
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\Microsoft.Xrm.Sdk.Deployment.dll
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\Microsoft.Xrm.Tooling.Connector.xml
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\StackExchange.Redis.StrongName.pdb
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\StackExchange.Redis.StrongName.xml
+C:\Users\shanepec\Documents\Visual Studio 2015\Projects\CraneAPI\CraneAPI\bin\Microsoft.Xrm.Sdk.Deployment.xml
