@@ -22,8 +22,9 @@
 					<p>BigBrotherisWatching(you)</p>
 				</header>
 				<footer>
-                    <video autoplay="" loop="" src="//azurecomcdn.azureedge.net/cvt-ef03ff3d209eb6430cb565c981b40a5e3cfb332786b467ae5b2d26cb0c2b9f26/images/page/media-services/AMS-WebBackground_1.2.mp4" style="height: 100%; width: 100%;"></video>
+                    <video autoplay="" loop="" src="//azurecomcdn.azureedge.net/cvt-ef03ff3d209eb6430cb565c981b40a5e3cfb332786b467ae5b2d26cb0c2b9f26/images/page/media-services/AMS-WebBackground_1.2.mp4" style="height: 90%; width: 100%;"></video>
                     <a href="#banner" class="button style2 scrolly-middle">Search from Video</a>
+                    <br />
                     <a href="#first" class="button style2 scrolly">Search by Image</a>
                  <!--   <input id="foo " runat="server" type="button" onserverclick="foo_OnClick" />-->
 				</footer>
@@ -43,7 +44,7 @@
 		<!-- Feature 1 -->
 			<article id="first" class="container box style1 right">
 				<!--<a href="#" class="image fit"><img src="assets/images/pic01.jpg" alt="" /></a>-->
-                <input type="text"
+                <input type="text" 
                        id="imageUrl"
                        value="http://strayhair.com/wp-content/uploads/2014/10/brad-pitt-with-fury-move-haircut-out-of-character.jpg
 " />
@@ -307,6 +308,7 @@
             <script>
               $(document).ready(function(){
                   $('#btnIdentify').click(function () {
+
                       selText = $('#liFaceListId :selected').val();
                       var detectInput = { "url": $("#imageUrl").val(), "faceListId": selText };
                     $.ajax({
@@ -321,11 +323,19 @@
                         contentType: "application/json; charset=utf-8",
                         dataType: "json",
                         success: function (data) {
-                            alert(JSON.stringify(data, null, 4));
-                            $('#whois').attr('src', data.url);
-                            $('#whoistext').html(data.description);
+                   
+                            if (data.description == null) {
+                                $('#whois').attr('src', "No match found");
+                                $('#whoistext').html("Either no match was found or check your connection");
+                            }
+                            else {
+                                $('#whois').attr('src', data.url);
+                                $('#whoistext').html(data.description);
+                            }
                         },
                         failure: function (errMsg) {
+                            $('#whois').attr('src', "No match found");
+                            $('#whoistext').html("Either no match was found or check your connection");
                             alert(errMsg);
                         }
                     });

@@ -43,7 +43,7 @@
 		<!-- Feature 1 -->
 			<article id="first" class="container box style1 right">
 				<!--<a href="#" class="image fit"><img src="assets/images/pic01.jpg" alt="" /></a>-->
-                <input type="text"
+                <input type="text" 
                        id="imageUrl"
                        value="http://strayhair.com/wp-content/uploads/2014/10/brad-pitt-with-fury-move-haircut-out-of-character.jpg
 " />
@@ -321,7 +321,7 @@
                         contentType: "application/json; charset=utf-8",
                         dataType: "json",
                         success: function (data) {
-                            alert(JSON.stringify(data, null, 4));
+                     //       alert(JSON.stringify(data, null, 4));
                             $('#whois').attr('src', data.url);
                             $('#whoistext').html(data.description);
                         },

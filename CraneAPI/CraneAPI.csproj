@@ -163,6 +163,7 @@
     <Content Include="assets\images\banner.svg" />
     <Content Include="assets\images\bg-alt.jpg" />
     <Content Include="assets\images\bg.jpg" />
+    <Content Include="assets\images\dc_icon_question_mark.jpg" />
     <Content Include="assets\images\fulls\01.jpg" />
     <Content Include="assets\images\fulls\02.jpg" />
     <Content Include="assets\images\fulls\03.jpg" />
@@ -229,7 +230,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Properties\PublishProfiles\CraneAPI - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\CraneAPI - Web Deploy.pubxml">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
