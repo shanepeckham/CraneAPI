@@ -122,7 +122,7 @@ namespace CraneAPI.Globals
             client.BaseAddress = new Uri("https://api.projectoxford.ai/");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "77d48262ff254746b7c7a152c8fd38aa");
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "");
             return client;
         }
 
@@ -188,7 +188,7 @@ namespace CraneAPI.Globals
 
         private static Lazy<ConnectionMultiplexer> lazyConnection = new Lazy<ConnectionMultiplexer>(() =>
         {
-            return ConnectionMultiplexer.Connect("cranecache.redis.cache.windows.net:6380,password=Dd99O7WPaA1HHCY9uIAfNbmPo6fpGQI8xQn5k50Gmr0=,ssl=True,abortConnect=True");
+            return ConnectionMultiplexer.Connect("[].redis.cache.windows.net:6380,password,ssl=True,abortConnect=True");
         });
 
   
@@ -210,7 +210,7 @@ namespace CraneAPI.Globals
             var queryString = HttpUtility.ParseQueryString(string.Empty);
 
             // Request headers
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "652fbb69c13248628deac2340632ac77");
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "");
 
             // Request parameters
             queryString["q"] = search;
